@@ -10,7 +10,6 @@
 		"dev:test": "vitest"
 	},
 	"devDependencies": {
-		"@changesets/cli": "^2.29.5",
 		"@types/babel__generator": "^7.27.0",
 		"@types/babel__traverse": "^7.28.0",
 		"@types/node": "^20.12.12",
@@ -31,7 +30,6 @@
 		"twcn": "./bin/cli.js"
 	},
 	"files": [
-		"dist",
-		"bin"
+		"dist"
 	]
 }

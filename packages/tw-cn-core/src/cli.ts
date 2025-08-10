@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 import path from "node:path";
 import fs from "node:fs/promises";
 import { parse } from "@babel/parser";
@@ -63,19 +64,26 @@ export async function formatTailwindInDir(
 			return false;
 		};
 
-		traverse(ast, {
-			JSXAttribute(path) {
-				if (!isClassAttr(path.node)) return;
+		// @ts-ignore
+		traverse.default(ast, {
+			JSXAttribute(path: any) {
+				if (!isClassAttr(path.node)) {
+					return;
+				}
 				const raw = getLiteralString(path.node.value);
-				if (!raw) return;
+				if (!raw) {
+					return;
+				}
 				const pretty = formatClasses(raw);
 				if (pretty !== raw) {
 					setLiteralString(path.node.value, pretty);
 					mutated = true;
 				}
 			},
-			CallExpression(path) {
-				if (!isCnCall(path)) return;
+			CallExpression(path: any) {
+				if (!isCnCall(path)) {
+					return;
+				}
 				const args = path.node.arguments;
 				if (args.length === 1 && t.isStringLiteral(args[0])) {
 					const raw = args[0].value;
@@ -89,8 +97,11 @@ export async function formatTailwindInDir(
 		});
 
 		if (mutated) {
-			const output = generate(ast, { retainLines: true }, code).code;
-			if (!DRY) await fs.writeFile(file, output, "utf8");
+			// @ts-ignore
+			const output = generate.default(ast, { retainLines: true }, code).code;
+			if (!DRY) {
+				await fs.writeFile(file, output, "utf8");
+			}
 			changed++;
 			console.log(`${DRY ? "[dry] " : ""}formatted: ${file}`);
 		}
@@ -102,12 +113,11 @@ export async function formatTailwindInDir(
 }
 
 // CLI execution
-if (require.main === module) {
-	const args = process.argv.slice(2);
-	const dry = args.includes("--dry");
-	const dir = args.find((a) => !a.startsWith("--")) || "src";
-	formatTailwindInDir(dir, { dry }).catch((err) => {
-		console.error(err);
-		process.exit(1);
-	});
-}
+
+const args = process.argv.slice(2);
+const dry = args.includes("--dry");
+const dir = args.find((a) => !a.startsWith("--")) || "src";
+formatTailwindInDir(dir, { dry }).catch((err) => {
+	console.error("Error occurred:", err);
+	process.exit(1);
+});
