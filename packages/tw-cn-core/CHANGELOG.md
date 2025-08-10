@@ -1,5 +1,11 @@
 # tw-cn-core
 
+## 0.4.2
+
+### Patch Changes
+
+- e846f7f: x
+
 ## 0.4.1
 
 ### Patch Changes
