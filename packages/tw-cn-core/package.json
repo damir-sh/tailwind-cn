@@ -29,5 +29,9 @@
 	},
 	"bin": {
 		"twcn": "./bin/cli.js"
-	}
+	},
+	"files": [
+		"dist",
+		"bin"
+	]
 }
