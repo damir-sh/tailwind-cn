@@ -1,10 +1,11 @@
 {
 	"name": "tailwind-cn",
-	"version": "1.0.0",
-	"description": "",
-	"main": "index.js",
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"type": "commonjs"
+	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
+	"scripts": {
+		"build": "npm run -w tw-cn-core build && npm run -w prettier-plugin-tailwind-cn build || true && npm run -w vscode-tailwind-cn build || true",
+		"test": "npm -w tw-cn-core test && npm -w prettier-plugin-tailwind-cn test || true"
+	}
 }
