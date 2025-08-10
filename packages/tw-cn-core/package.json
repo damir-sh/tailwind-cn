@@ -1,0 +1,17 @@
+{
+	"name": "tw-cn-core",
+	"version": "0.0.1",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc -p tsconfig.json",
+		"test": "vitest run",
+		"dev:test": "vitest"
+	},
+	"devDependencies": {
+		"typescript": "^5.5.4",
+		"vitest": "^2.0.5",
+		"@types/node": "^20.12.12"
+	}
+}
