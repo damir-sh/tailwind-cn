@@ -1,5 +1,11 @@
 # tw-cn-core
 
+## 0.4.0
+
+### Minor Changes
+
+- b4b2bfe: update
+
 ## 0.3.0
 
 ### Minor Changes
