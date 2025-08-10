@@ -9,9 +9,9 @@
 - Supports custom **prefix**, **variants**, and plugin utilities via options.
 - Idempotent output — safe to run multiple times.
 - Core library can be used in:
-  - Prettier plugin
-  - VS Code extension
-  - CLI codemod
+  - Prettier plugin (TBD)
+  - VS Code extension (TBD)
+  - CLI (Almost done)
 
 ## Install
 
