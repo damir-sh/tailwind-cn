@@ -1,5 +1,11 @@
 # tw-cn-core
 
+## 0.4.1
+
+### Patch Changes
+
+- eda8435: update
+
 ## 0.4.0
 
 ### Minor Changes
