@@ -5,7 +5,7 @@ import traverse from "@babel/traverse";
 import generate from "@babel/generator";
 import * as t from "@babel/types";
 
-describe("tw-cn-core", () => {
+describe("tailwind-formatter", () => {
 	it("groups + orders basics", () => {
 		const out = formatClasses(
 			"text-red-500 p-4 flex md:hover:bg-blue-500 rounded-lg items-center"

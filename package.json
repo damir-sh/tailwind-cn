@@ -1,11 +1,11 @@
 {
-	"name": "tailwind-cn",
+	"name": "tailwind-formatter",
 	"private": true,
 	"workspaces": [
 		"packages/*"
 	],
 	"scripts": {
-		"build": "npm run -w tw-cn-core build",
-		"test": "npm -w tw-cn-core test"
+		"build": "npm run -w tailwind-formatter build",
+		"test": "npm -w tailwind-formatter test"
 	}
 }

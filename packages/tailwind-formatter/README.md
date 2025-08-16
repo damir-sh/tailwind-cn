@@ -9,14 +9,14 @@
 - Supports custom **prefix**, **variants**, and plugin utilities via options.
 - Idempotent output — safe to run multiple times.
 - Core library can be used in:
-  - Prettier plugin (TBD)
-  - VS Code extension (TBD)
-  - CLI (Almost done)
+  - Prettier plugin
+  - VS Code extension
+  - CLI codemod
 
 ## Install
 
 ```bash
-npm install tw-cn-core --save-dev
+npm install tailwind-formatter --save-dev
 ```
 
 TBD
