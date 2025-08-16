@@ -7,13 +7,15 @@ import traverse from "@babel/traverse";
 import generate from "@babel/generator";
 import * as t from "@babel/types";
 import fg from "fast-glob";
-import { formatClasses } from "./index.js"; // import from core
+import { formatClasses } from "./index.js";
 
 export async function formatTailwindInDir(
 	dir: string,
-	opts?: { dry?: boolean }
+	opts?: { dry?: boolean; useCn?: boolean; debug?: boolean }
 ) {
 	const DRY = !!opts?.dry;
+	const USE_CN = !!opts?.useCn;
+	const DEBUG = !!opts?.debug || process.env.TWCN_DEBUG === "1";
 	const GLOB = path.join(dir, "**/*.{js,jsx,ts,tsx}");
 	const files = await fg(GLOB, {
 		ignore: ["**/node_modules/**"],
@@ -23,6 +25,7 @@ export async function formatTailwindInDir(
 	let changed = 0;
 
 	for (const file of files) {
+		if (DEBUG) console.log(`[twcn] scanning: ${file}`);
 		const code = await fs.readFile(file, "utf8");
 		const ast = parse(code, {
 			sourceType: "module",
@@ -58,10 +61,22 @@ export async function formatTailwindInDir(
 			if (!t.isCallExpression(path.node)) return false;
 			const callee = path.node.callee;
 			if (t.isIdentifier(callee))
-				return ["cn", "clsx", "cx"].includes(callee.name);
+				return ["cn", "clsx", "cx", "classnames", "classNames"].includes(
+					callee.name
+				);
 			if (t.isMemberExpression(callee) && t.isIdentifier(callee.property))
-				return ["cn", "clsx", "cx"].includes(callee.property.name);
+				return ["cn", "clsx", "cx", "classnames", "classNames"].includes(
+					callee.property.name
+				);
 			return false;
+		};
+
+		const getStaticStringArg = (node: any): string | null => {
+			if (t.isStringLiteral(node)) return node.value;
+			if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
+				return node.quasis.map((q) => q.value.cooked || "").join("");
+			}
+			return null;
 		};
 
 		// @ts-ignore
@@ -74,10 +89,62 @@ export async function formatTailwindInDir(
 				if (!raw) {
 					return;
 				}
+				if (DEBUG)
+					console.log(
+						`[twcn] JSX class attr found in ${file}: raw="${raw}" USE_CN=${USE_CN}`
+					);
+				if (USE_CN) {
+					// pick an available helper name in scope
+					const candidates = ["cn", "clsx", "cx", "classnames", "classNames"];
+					let helper = candidates.find((n) => path.scope.hasBinding(n));
+					const groups =
+						(formatClasses(raw, {
+							splitPerGroup: true,
+						}) as unknown as string[]) || [];
+					if (DEBUG)
+						console.log(
+							`[twcn] JSX wrap check helper=${
+								helper ?? "<none>"
+							} groups=${JSON.stringify(groups)}`
+						);
+					// If no helper in scope, try to auto-insert: import classNames from "classnames";
+					if (!helper && groups.length > 0) {
+						const programPath: any = path.findParent((p: any) => p.isProgram());
+						const alreadyHasClassNames = programPath.node.body.some(
+							(n: any) =>
+								t.isImportDeclaration(n) && n.source.value === "classnames"
+						);
+						if (!alreadyHasClassNames) {
+							const importDecl = t.importDeclaration(
+								[t.importDefaultSpecifier(t.identifier("classNames"))],
+								t.stringLiteral("classnames")
+							);
+							programPath.node.body.unshift(importDecl);
+							if (DEBUG)
+								console.log(
+									`[twcn] inserted import: import classNames from "classnames"`
+								);
+						}
+						helper = "classNames";
+					}
+					if (helper && groups.length > 0) {
+						const call = t.callExpression(
+							t.identifier(helper),
+							groups.map((g) => t.stringLiteral(g))
+						);
+						const expr = t.jsxExpressionContainer(call);
+						// Replace literal value with expression container
+						path.node.value = expr;
+						mutated = true;
+						if (DEBUG) console.log(`[twcn] JSX class wrapped with ${helper}()`);
+						return;
+					}
+				}
 				const pretty = formatClasses(raw);
 				if (pretty !== raw) {
 					setLiteralString(path.node.value, pretty);
 					mutated = true;
+					if (DEBUG) console.log(`[twcn] JSX class sorted -> "${pretty}"`);
 				}
 			},
 			CallExpression(path: any) {
@@ -85,12 +152,63 @@ export async function formatTailwindInDir(
 					return;
 				}
 				const args = path.node.arguments;
-				if (args.length === 1 && t.isStringLiteral(args[0])) {
-					const raw = args[0].value;
+				if (DEBUG) console.log(`[twcn] cn-like call found in ${file}`);
+				if (USE_CN) {
+					const stringLiteralIndices = args
+						.map((a: any, i: number) =>
+							getStaticStringArg(a) !== null ? i : -1
+						)
+						.filter((i: number) => i >= 0);
+					if (stringLiteralIndices.length > 0) {
+						const combined = stringLiteralIndices
+							.map((i: number) => getStaticStringArg(args[i]) as string)
+							.join(" ");
+						const groups =
+							(formatClasses(combined, {
+								splitPerGroup: true,
+							}) as unknown as string[]) || [];
+						if (DEBUG)
+							console.log(
+								`[twcn] cn-like combined="${combined}" groups=${JSON.stringify(
+									groups
+								)}`
+							);
+						if (groups.length > 0) {
+							const groupedNodes = groups.map((g) => t.stringLiteral(g));
+							const firstIndex = stringLiteralIndices[0];
+							const newArgs: any[] = [];
+							for (let i = 0; i < firstIndex; i++) newArgs.push(args[i]);
+							for (const node of groupedNodes) newArgs.push(node);
+							for (let i = firstIndex + 1; i < args.length; i++) {
+								if (getStaticStringArg(args[i]) === null) newArgs.push(args[i]);
+							}
+							const originalSingle = stringLiteralIndices.length === 1;
+							const originalCombinedValue = getStaticStringArg(
+								args[stringLiteralIndices[0]]
+							);
+							const originalCombinedEqualsSingle =
+								originalSingle &&
+								groups.length === 1 &&
+								groups[0] === originalCombinedValue;
+							if (
+								!originalCombinedEqualsSingle ||
+								groups.length > 1 ||
+								!originalSingle
+							) {
+								path.node.arguments = newArgs as any;
+								mutated = true;
+								if (DEBUG) console.log(`[twcn] cn-like args regrouped`);
+							}
+						}
+					}
+				} else if (args.length === 1 && getStaticStringArg(args[0]) !== null) {
+					const raw = getStaticStringArg(args[0]) as string;
 					const pretty = formatClasses(raw);
 					if (pretty !== raw) {
 						args[0] = t.stringLiteral(pretty);
 						mutated = true;
+						if (DEBUG)
+							console.log(`[twcn] cn-like single arg sorted -> "${pretty}"`);
 					}
 				}
 			},
@@ -115,9 +233,30 @@ export async function formatTailwindInDir(
 // CLI execution
 
 const args = process.argv.slice(2);
+
+// Validate arguments - only allow --dry, --use-cn, and directory path
+const allowedFlags = ["--dry", "--use-cn", "--debug"];
+const invalidArgs = args.filter(
+	(arg) => arg.startsWith("--") && !allowedFlags.includes(arg)
+);
+
+if (invalidArgs.length > 0) {
+	console.error(`Invalid arguments: ${invalidArgs.join(", ")}`);
+	console.error("Allowed flags: --dry, --use-cn");
+	process.exit(1);
+}
+
 const dry = args.includes("--dry");
+const useCn = args.includes("--use-cn");
+const debug = args.includes("--debug") || process.env.TWCN_DEBUG === "1";
 const dir = args.find((a) => !a.startsWith("--")) || "src";
-formatTailwindInDir(dir, { dry }).catch((err) => {
+
+if (debug)
+	console.log(
+		`[twcn] start dir=${dir} DRY=${dry} USE_CN=${useCn} DEBUG=${debug}`
+	);
+
+formatTailwindInDir(dir, { dry, useCn, debug }).catch((err) => {
 	console.error("Error occurred:", err);
 	process.exit(1);
 });
