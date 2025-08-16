@@ -15,7 +15,7 @@ export async function formatTailwindInDir(
 ) {
 	const DRY = !!opts?.dry;
 	const USE_CN = !!opts?.useCn;
-	const DEBUG = !!opts?.debug || process.env.TWCN_DEBUG === "1";
+	const DEBUG = !!opts?.debug || process.env.TW_DEBUG === "1";
 	const GLOB = path.join(dir, "**/*.{js,jsx,ts,tsx}");
 	const files = await fg(GLOB, {
 		ignore: ["**/node_modules/**"],
@@ -25,7 +25,7 @@ export async function formatTailwindInDir(
 	let changed = 0;
 
 	for (const file of files) {
-		if (DEBUG) console.log(`[twcn] scanning: ${file}`);
+		if (DEBUG) console.log(`[tailwind-formatter] scanning: ${file}`);
 		const code = await fs.readFile(file, "utf8");
 		const ast = parse(code, {
 			sourceType: "module",
@@ -91,7 +91,7 @@ export async function formatTailwindInDir(
 				}
 				if (DEBUG)
 					console.log(
-						`[twcn] JSX class attr found in ${file}: raw="${raw}" USE_CN=${USE_CN}`
+						`[tailwind-formatter] JSX class attr found in ${file}: raw="${raw}" USE_CN=${USE_CN}`
 					);
 				if (USE_CN) {
 					// pick an available helper name in scope
@@ -103,7 +103,7 @@ export async function formatTailwindInDir(
 						}) as unknown as string[]) || [];
 					if (DEBUG)
 						console.log(
-							`[twcn] JSX wrap check helper=${
+							`[tailwind-formatter] JSX wrap check helper=${
 								helper ?? "<none>"
 							} groups=${JSON.stringify(groups)}`
 						);
@@ -122,7 +122,7 @@ export async function formatTailwindInDir(
 							programPath.node.body.unshift(importDecl);
 							if (DEBUG)
 								console.log(
-									`[twcn] inserted import: import classNames from "classnames"`
+									`[tailwind-formatter] inserted import: import classNames from "classnames"`
 								);
 						}
 						helper = "classNames";
@@ -136,7 +136,10 @@ export async function formatTailwindInDir(
 						// Replace literal value with expression container
 						path.node.value = expr;
 						mutated = true;
-						if (DEBUG) console.log(`[twcn] JSX class wrapped with ${helper}()`);
+						if (DEBUG)
+							console.log(
+								`[tailwind-formatter] JSX class wrapped with ${helper}()`
+							);
 						return;
 					}
 				}
@@ -144,7 +147,8 @@ export async function formatTailwindInDir(
 				if (pretty !== raw) {
 					setLiteralString(path.node.value, pretty);
 					mutated = true;
-					if (DEBUG) console.log(`[twcn] JSX class sorted -> "${pretty}"`);
+					if (DEBUG)
+						console.log(`[tailwind-formatter] JSX class sorted -> "${pretty}"`);
 				}
 			},
 			CallExpression(path: any) {
@@ -152,7 +156,8 @@ export async function formatTailwindInDir(
 					return;
 				}
 				const args = path.node.arguments;
-				if (DEBUG) console.log(`[twcn] cn-like call found in ${file}`);
+				if (DEBUG)
+					console.log(`[tailwind-formatter] cn-like call found in ${file}`);
 				if (USE_CN) {
 					const stringLiteralIndices = args
 						.map((a: any, i: number) =>
@@ -169,7 +174,7 @@ export async function formatTailwindInDir(
 							}) as unknown as string[]) || [];
 						if (DEBUG)
 							console.log(
-								`[twcn] cn-like combined="${combined}" groups=${JSON.stringify(
+								`[tailwind-formatter] cn-like combined="${combined}" groups=${JSON.stringify(
 									groups
 								)}`
 							);
@@ -197,7 +202,8 @@ export async function formatTailwindInDir(
 							) {
 								path.node.arguments = newArgs as any;
 								mutated = true;
-								if (DEBUG) console.log(`[twcn] cn-like args regrouped`);
+								if (DEBUG)
+									console.log(`[tailwind-formatter] cn-like args regrouped`);
 							}
 						}
 					}
@@ -208,7 +214,9 @@ export async function formatTailwindInDir(
 						args[0] = t.stringLiteral(pretty);
 						mutated = true;
 						if (DEBUG)
-							console.log(`[twcn] cn-like single arg sorted -> "${pretty}"`);
+							console.log(
+								`[tailwind-formatter] cn-like single arg sorted -> "${pretty}"`
+							);
 					}
 				}
 			},
@@ -248,12 +256,12 @@ if (invalidArgs.length > 0) {
 
 const dry = args.includes("--dry");
 const useCn = args.includes("--use-cn");
-const debug = args.includes("--debug") || process.env.TWCN_DEBUG === "1";
+const debug = args.includes("--debug") || process.env.TW_DEBUG === "1";
 const dir = args.find((a) => !a.startsWith("--")) || "src";
 
 if (debug)
 	console.log(
-		`[twcn] start dir=${dir} DRY=${dry} USE_CN=${useCn} DEBUG=${debug}`
+		`[tailwind-formatter] start dir=${dir} DRY=${dry} USE_CN=${useCn} DEBUG=${debug}`
 	);
 
 formatTailwindInDir(dir, { dry, useCn, debug }).catch((err) => {
