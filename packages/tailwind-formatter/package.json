@@ -1,6 +1,6 @@
 {
-	"name": "tailwind-formatter",
-	"version": "0.4.5",
+	"name": "@damir-sh/tailwind-formatter",
+	"version": "0.0.1",
 	"type": "module",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -27,7 +27,7 @@
 		"fast-glob": "^3.3.3"
 	},
 	"bin": {
-		"tailwind-formatter": "./bin/cli.js"
+		"tailwind-formatter": "bin/cli.js"
 	},
 	"files": [
 		"dist"
