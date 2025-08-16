@@ -25,19 +25,19 @@ npm install @damir-sh/tailwind-formatter --save-dev
 Format all files in your `src` directory:
 
 ```bash
-npx tailwind-formatter src
+npx @damir-sh/tailwind-formatter src
 ```
 
 Preview changes without modifying files:
 
 ```bash
-npx tailwind-formatter src --dry
+npx @damir-sh/tailwind-formatter src --dry
 ```
 
 Group classes with `cn()` function calls:
 
 ```bash
-npx tailwind-formatter src --use-cn
+npx @damir-sh/tailwind-formatter src --use-cn
 ```
 
 ### Programmatic Usage
@@ -202,16 +202,16 @@ formatClasses("sm:hover:focus:text-blue-500 lg:group-hover:bg-red-500");
 
 ```bash
 # Format all TypeScript/JavaScript files in src
-npx tailwind-formatter src
+npx @damir-sh/tailwind-formatter src
 
 # Format specific directory with dry run
-npx tailwind-formatter components --dry
+npx @damir-sh/tailwind-formatter components --dry
 
 # Use cn() grouping with debug output
-npx tailwind-formatter src --use-cn --debug
+npx @damir-sh/tailwind-formatter src --use-cn --debug
 
-# Set debug mode via environment variable
-TW_DEBUG=1 npx tailwind-formatter src
+# Use --debug for debug output
+npx @damir-sh/tailwind-formatter src --debug
 ```
 
 ## 🤝 Integration
@@ -251,13 +251,7 @@ The formatter automatically detects and processes:
 Enable debug logging to see what the formatter is doing:
 
 ```bash
-npx tailwind-formatter src --debug
-```
-
-Or set the environment variable:
-
-```bash
-TW_DEBUG=1 npx tailwind-formatter src
+npx @damir-sh/tailwind-formatter src --debug
 ```
 
 ### Common Issues
