@@ -1,4 +1,4 @@
-# tailwind-cn
+# @damir-sh/tailwind-formatter
 
 **A Tailwind CSS class formatter** that groups utilities into semantic buckets (layout, spacing, colors, etc.) and outputs them in a consistent, readable order.
 
